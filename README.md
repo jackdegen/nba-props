@@ -5,7 +5,7 @@
 
 - Toggle settings in `params.py` for DraftKings or FanDuel, Classic or Single Game contests
 - Input provided contest files from DFS sites in `data/` as `current-{site}.csv`
--     Only manual step required from user besides toggling desired settings.
+    - Only manual step required from user besides toggling desired settings.
 - Alerts to let you know what players have had props added since last run-through.
 -     Initial run through will spit out large list of names
 - Calculates `fpts` according to site rules, hence requirment to toggle setting.
