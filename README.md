@@ -4,7 +4,7 @@
 ### Scrape up to date NBA props and convert into fanstasy points.
 
 - Toggle settings in `params.py` for DraftKings or FanDuel, Classic or Single Game contests
-- Input provided contest files from DFS sites in `data/` as `current-{site}.csv`
+- Input provided contest files from DFS sites in `data/` as `current-{site}.csv`; if Single Game, add `-sg` before `.csv` in file name.
     - Only manual step required from user besides toggling desired settings.
 - Alerts to let you know what players have had props added since last run-through.
     - Initial run through will spit out large list of names
