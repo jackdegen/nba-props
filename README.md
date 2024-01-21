@@ -8,7 +8,7 @@
     - Only manual step required from user besides toggling desired settings.
 - Alerts to let you know what players have had props added since last run-through.
     - Initial run through will spit out large list of names
-- Calculates `fpts` according to site rules, hence requirment to toggle setting.
+- Calculates `fpts` according to site rules, hence requirement to toggle setting.
     - Uses provided salaries to determine best allocation of salary for players as FPTS / $1,000, `fpts/$`.
 - Factors in implied probabilities of player props for separate value of "Expected Fantasy Points", `e_fpts`.
     - Similarly uses this value with salary to determine best allocation, `e_fpts/$`
