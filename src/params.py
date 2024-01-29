@@ -1,4 +1,4 @@
-draftkings: bool = True
+draftkings: bool = False
 singlegame: bool = False
 
 site: str = {
