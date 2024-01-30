@@ -280,10 +280,11 @@ class PropScraper:
         
         fpts = df['fpts'].sum()
 
-        if doubles == 2:
-            fpts += 1.5
-
-        elif doubles >= 3:
-            fpts += 4.5
+        if site == 'draftkings':
+            if doubles == 2:
+                fpts += 1.5
+    
+            elif doubles >= 3:
+                fpts += 4.5
             
         return (fpts, df['e_fpts'].sum())
