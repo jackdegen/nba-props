@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def pandas_settings() -> None:
     for option in ('display.max_rows', 'display.max_columns', 'display.width'):
-        pd.set_option(option, 250)
+        pd.set_option(option, 300)
 
     pd.set_option('display.precision', 3)
     pd.set_option('styler.format.precision', 2)
@@ -15,6 +15,6 @@ def matplotlib_settings() -> None:
 
     return
 
-if __name__ == "customsettings":
+if __name__ == "custom":
     pandas_settings()
     matplotlib_settings()
