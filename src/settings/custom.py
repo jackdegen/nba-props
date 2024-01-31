@@ -15,6 +15,6 @@ def matplotlib_settings() -> None:
 
     return
 
-if __name__ == "custom":
+if __name__ == "settings.custom":
     pandas_settings()
     matplotlib_settings()
