@@ -20,6 +20,7 @@
 
 - To install this is just like installing any other GitHub repository.
 - I have noticed I've received lots of clones, and I assume it is individuals in the DFS / Sports Betting space, so I figured I'd add some directions for people not use to dealing with Python super heavily.
+- Installation is done from the Command Line so open Terminal or equivalent.
 - *(optional)* If want to install in location that is not home directory:
 
 ```
@@ -51,8 +52,13 @@ $ jupyter-lab
 ```
 - This should have opened up a **Jupyter Notebook** in your browser.
 - Go to `src/settings/params` and toggle the top two settings to how you would like.
-- Go to the navigation menu, and open `src/interactive.py`.
-- Click the fast-forward icon near the top, next to the drop-down menu that says 'Code'
+- Go to the navigation menu, and open `src/main.py`.
+- Click the fast-forward icon near the top, next to the drop-down menu that says 'Code', alternatively you can run each code step by step.
+- Be careful with the cell containing the following: `handler.constant_scrape()`:
+    - Running an infinite loop to update data and add any new players.
+    - However, it will need to be manually stopped in order to make notebook interactive again.
+    - Doing so will trigger a `KeyboardInterruption` error, that is not an actual error it is a result of shutting down the loop.
+    - All data will have been saved and updated behind the scenes, will not be any output since it runs quietly in background. 
 - A new file will have been created in `data/` containing the info for the NBA slate that day for whichever site you specified.
 - You can also view the data within the JupyterNotebook as a pandas DataFrame by going to the bottom, and in a new cell just type `df` and either hit Shift + Enter or the Play button near the top to execute the cell.
 
