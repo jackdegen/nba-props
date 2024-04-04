@@ -1,21 +1,9 @@
-import os
 import requests
 import datetime
 
-import numpy as np
 import pandas as pd
 
-from typing import Callable
-
 from bs4 import BeautifulSoup
-
-# Returns current date as string in desired format for files
-def date_path() -> str:
-    return '.'.join([
-        datetime.datetime.now().strftime("%m%d%y"),
-        # (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m%d%y"),
-        'csv'
-    ])
 
 class Conversions:
     
@@ -125,7 +113,7 @@ class PropScraper:
         }
         
         
-        clean_name: Callable[[str],str] = lambda name: self.convert.player_name(' '.join(name.split(' ')[:2]).replace('.', ''))
+        clean_name = lambda name: self.convert.player_name(' '.join(name.split(' ')[:2]).replace('.', ''))
         
 #         Parse HTML data for each team to organize links in easily searchable manner
         teams_players_links: dict[str, dict[str, str]] = {
