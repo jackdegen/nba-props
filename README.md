@@ -65,4 +65,17 @@ $ jupyter-lab
 - You can also view the data within the JupyterNotebook as a pandas DataFrame by going to the bottom, and in a new cell just type `df` and either hit Shift + Enter or the Play button near the top to execute the cell.
 
 </br>
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first
+to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
+
+</br>
 </br>
