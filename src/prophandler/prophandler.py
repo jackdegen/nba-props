@@ -75,7 +75,6 @@ class PropHandler:
         self.directory = self.Props.create_webpage_directory()
 
         # Last update
-        # self.last = pd.read_csv(f'../data/{site}-props{"-sg" if mode == "single-game" else ""}.csv').set_index('name')
         self.last = pd.read_csv(self.datafilepath(f'{site}-props{"-sg" if mode == "single-game" else ""}'))
 
     def save_directory(self) -> None:
@@ -96,7 +95,7 @@ class PropHandler:
                 df_data['url'].append(name)
         
         df = pd.DataFrame(df_data)
-        # df.to_csv('../data/url-directory.csv', index=False)
+        
         df.to_csv(self.datafilepath('url-directory'), index=False)
         
         return
@@ -106,7 +105,6 @@ class PropHandler:
         Load last saved directory in case of website issues
         """
     
-        # df = pd.read_csv('../data/url-directory.csv')
         df = pd.read_csv(self.datafilepath('url-directory'))
     
         team_dfs = {
@@ -153,9 +151,6 @@ class PropHandler:
         """
         Scrape props for all players in ../data/current-draftkings.csv and save for those players where props exist.
         """
-        # path: str = '../data/current-draftkings.csv'
-        # if self.mode == 'single-game':
-        #     path: str = path.replace('.csv', '-sg.csv')
 
         fname = 'current-draftkings'
         if self.mode == 'single-game':
@@ -243,8 +238,6 @@ class PropHandler:
                   )
                   .round(2)
                  )
-        
-        # df.to_csv(f'../data/draftkings-props{"-sg" if single_game else ""}.csv')
 
         path = self.datafilepath(f'draftkings-props{"-sg" if single_game else ""}')
         
@@ -263,10 +256,6 @@ class PropHandler:
         """
         Scrape props for all players in ../data/current-fanduel.csv and save for those players where props exist.
         """
-        
-        # path: str = '../data/current-fanduel.csv'
-        # if self.mode == 'single-game':
-        #     path: str = path.replace('.csv', '-sg.csv')
 
         fname = 'current-fanduel'
         if self.mode == 'single-game':
@@ -478,7 +467,6 @@ class PropHandler:
                 for name_ in list(set(cur.index).difference(set(self.last.index)))
             ]
             print(*output, sep='\n')
-            # if len(output): print(*output, sep='\n')
         
             # Disguise requests a little bit
             rand_int_sleep_time = random.randint(2, 7)
