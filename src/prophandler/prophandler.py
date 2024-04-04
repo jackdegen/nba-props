@@ -457,7 +457,7 @@ class PropHandler:
                 f'    --> {name_}'
                 for name_ in list(set(cur.index).difference(set(self.last.index)))
             ]
-            print(*output, sep='\n')
+            if len(output): print(*output, sep='\n')
         
             # Disguise requests a little bit
             rand_int_sleep_time = random.randint(2, 7)
