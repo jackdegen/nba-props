@@ -4,7 +4,7 @@
 
 ### Scrape up to date NBA props and convert into fanstasy points.
 
-- Toggle settings in `src/settings/params.py` for DraftKings or FanDuel, Classic or Single Game contests
+- Different settings in `src/main.ipynb` for DraftKings or FanDuel (`SITE`), Classic or Single Game contests (`MODE`).
 - Input provided contest files from DFS sites in `data/` as `current-{site}.csv`; if Single Game, add `-sg` before `.csv` in file name.
     - Only manual step required from user besides toggling desired settings.
 - Alerts to let you know what players have had props added since last run-through.
@@ -36,7 +36,7 @@ $ git clone https://github.com/jackdegen/nba-props
 ```
 
 - *(optional)* If you want to create a virtual environment, `.venv`; if you prefer a different name, repalce `.venv` with it:
-    - *Note: if you do not do this step and you do not use Python, you will have to manually install `numpy`, `pandas`, `requests`, `BeautifulSoup` on your system with `pip`. This would require dealing with different system dependencies*
+    - *Note: if you do not do this step and you do not use Python, you will have to manually install `pandas`, `requests`, `BeautifulSoup`, and all other necessary packages on your system with `pip`. This may require dealing with different system dependencies*
     - I strongly suggest following these steps, even if you are not entirely sure what they are doing.
     - They are just installing the external libraries required to run the code ***only*** in this directory, not on your entire machine.
 
@@ -53,13 +53,13 @@ $ pip install -r requirments.txt
 $ jupyter-lab
 ```
 - This should have opened up a **Jupyter Notebook** in your browser.
-- Go to `src/settings/params` and toggle the top two settings to how you would like.
 - Go to the navigation menu, and open `src/main.py`.
-- Click the fast-forward icon near the top, next to the drop-down menu that says 'Code', alternatively you can run each code step by step.
-- Be careful with the cell containing the following: `handler.constant_scrape()`:
+- Toggle settings in first cell for `SITE` and `MODE`.
+- Run the cells either one by one or with fast-forward button, just be wary of last cell.
+- Need to be careful with the cell containing the following: `handler.constant_scrape()`:
     - Running an infinite loop to update data and add any new players.
     - However, it will need to be manually stopped in order to make notebook interactive again.
-    - Doing so will trigger a `KeyboardInterruption` error, that is not an actual error it is a result of shutting down the loop.
+    - Doing so will trigger a `KeyboardInterrupt` error, that is not an actual error it is a result of shutting down the loop.
     - All data will have been saved and updated behind the scenes, will not be any output since it runs quietly in background. 
 - A new file will have been created in `data/` containing the info for the NBA slate that day for whichever site you specified.
 - You can also view the data within the JupyterNotebook as a pandas DataFrame by going to the bottom, and in a new cell just type `df` and either hit Shift + Enter or the Play button near the top to execute the cell.
