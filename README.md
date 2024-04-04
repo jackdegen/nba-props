@@ -20,6 +20,7 @@
 
 - To install this is just like installing any other GitHub repository.
 - I have noticed I've received lots of clones, and I assume it is individuals in the DFS / Sports Betting space, so I figured I'd add some directions for people not use to dealing with Python super heavily.
+- Installation is done from the Command Line so open Terminal or equivalent.
 - *(optional)* If want to install in location that is not home directory:
 
 ```
