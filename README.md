@@ -43,7 +43,7 @@ $ git clone https://github.com/jackdegen/nba-props
 ```
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-(.venv) $ pip install -r requirments.txt
+(.venv) $ pip install -r requirements.txt
 ```
 
 - If you have **JupyterLab/JupyterNotebook**, I suggest running the code in that as it is easier on the eyes and more interactive if you are familiar with Jupyter.
