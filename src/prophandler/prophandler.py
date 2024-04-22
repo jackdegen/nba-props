@@ -259,12 +259,6 @@ class PropHandler:
         
         self.last = pd.read_csv(path)
         df.to_csv(path)
-
-        # Save to optimizer
-        df.to_csv(
-            '/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2023-2024/contest-files/draftkings/current/projections.csv',
-            # index=False
-        )
         
         return
 
@@ -337,12 +331,6 @@ class PropHandler:
         
         self.last = pd.read_csv(path)
         df.to_csv(path)
-
-        # Save to optimizer
-        df.to_csv(
-            '/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2023-2024/contest-files/fanduel/current/projections.csv',
-            # index=False
-        )
         
         return
 
