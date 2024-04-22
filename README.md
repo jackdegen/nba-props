@@ -21,8 +21,9 @@
 ### Installation
 
 - To install this is just like installing any other GitHub repository.
-- I have noticed I've received lots of clones, and I assume it is individuals in the DFS / Sports Betting space, so I figured I'd add some directions for people not use to dealing with Python super heavily.
-- Installation is done from the Command Line so open Terminal or equivalent.
+- I have noticed I've received lots of clones, and I assume it is individuals in the DFS / Sports Betting space, so I figured I'd add some directions for people not used to dealing with Python super heavily.
+- On Linux or MacOS: Installation is done from the Command Line so open Terminal or equivalent.
+    - (windows users, I'm working on it)
 - *(optional)* If want to install in location that is not home directory:
 
 ```
@@ -37,7 +38,7 @@ $ git clone https://github.com/jackdegen/nba-props
 
 - *(optional)* If you want to create a virtual environment, `.venv`; if you prefer a different name, repalce `.venv` with it:
     - *Note: if you do not do this step and you do not use Python, you will have to manually install `pandas`, `requests`, `BeautifulSoup`, and all other necessary packages on your system with `pip`. This may require dealing with different system dependencies*
-    - I strongly suggest following these steps, even if you are not entirely sure what they are doing.
+    - I **strongly suggest** following these steps, even if you are not entirely sure what they are doing.
     - They are just installing the external libraries required to run the code ***only*** in this directory, not on your entire machine.
 
 ```
