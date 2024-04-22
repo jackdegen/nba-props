@@ -20,6 +20,19 @@ class PropHandler:
         return
 
     @staticmethod
+    def output_msgs(msgs: list[str,...]) -> None:
+        """
+        Pretty printer
+        """
+
+        padding = '='*max([len(msg_) for msg_ in msgs])
+        output = [padding] + msgs + [padding]
+    
+        print(*output, sep='\n')
+        
+        return
+
+    @staticmethod
     def output_times(func, **kwargs):
         """
         Wrapper function to print performance time in Xm Ys format
@@ -75,7 +88,10 @@ class PropHandler:
         self.directory = self.Props.create_webpage_directory()
 
         # Last update
-        self.last = pd.read_csv(self.datafilepath(f'{site}-props{"-sg" if mode == "single-game" else ""}'))
+        self.last = (pd
+                     .read_csv(self.datafilepath(f'{site}-props{"-sg" if mode == "single-game" else ""}'))
+                     .set_index('name')
+                    )
 
     def save_directory(self) -> None:
         """
@@ -243,6 +259,12 @@ class PropHandler:
         
         self.last = pd.read_csv(path)
         df.to_csv(path)
+
+        # Save to optimizer
+        df.to_csv(
+            '/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2023-2024/contest-files/draftkings/current/projections.csv',
+            # index=False
+        )
         
         return
 
@@ -268,7 +290,7 @@ class PropHandler:
         
         keep_minimums: tuple[str,...] = tuple()
         drop_minimums: tuple[str,...] = tuple([
-            name for name in (pd.read_csv(path, usecols=['Nickname','Salary']).pipe(lambda df_: df_.loc[df_['Salary'] == MIN_SAL]['Nickname'])) if name not in keep_minimums
+            name for name in (pd.read_csv(self.datafilepath(fname, usecols=['Nickname','Salary'])).pipe(lambda df_: df_.loc[df_['Salary'] == MIN_SAL]['Nickname'])) if name not in keep_minimums
         ])
         
         df: pd.DataFrame = (pd
@@ -315,8 +337,12 @@ class PropHandler:
         
         self.last = pd.read_csv(path)
         df.to_csv(path)
-        
-        
+
+        # Save to optimizer
+        df.to_csv(
+            '/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2023-2024/contest-files/fanduel/current/projections.csv',
+            # index=False
+        )
         
         return
 
@@ -346,18 +372,19 @@ class PropHandler:
         fname = f'current-{self.site}'
         if self.mode == 'single-game':
             fname += '-sg'
+
+        team_column = 'TeamAbbrev' if self.site == 'draftkings' else 'Team'
         
         total_teams: int = len(pd
                                .read_csv(
                                     self.datafilepath(fname),
-                                    usecols=['TeamAbbrev']
+                                    usecols=[team_column]
                                 )
-                               .rename({'TeamAbbrev': 'Team'}, axis=1)
-                               ['Team']
+                               [team_column]
                                .drop_duplicates()
                               )
         
-        print(f'{len(df)} teams total...')
+        print(f'{df.shape[0]} teams total...')
         print(f'Missing: {int(100*(1 - (len(df) / total_teams)))}% of teams...\n')
         
         return df
@@ -365,14 +392,14 @@ class PropHandler:
     def load_slate(self, **kwargs) -> pd.DataFrame:
         verbose = kwargs.get('verbose', 1)
         exclude = kwargs.get('exclude', list())
-        drop = kwargs.get('drop', list())
+        inactive = kwargs.get('inactive', list())
 
         fname = f'{self.site}-props{"-sg" if self.mode == "single-game" else ""}'
         
         ret: pd.DataFrame = (pd
                              # .read_csv(f'../data/{self.site}-props{"-sg" if self.mode == "single-game" else ""}.csv')
                              .read_csv(self.datafilepath(fname))
-                             .pipe(lambda df_: df_.loc[df_['name'].isin(drop) == False])
+                             .pipe(lambda df_: df_.loc[df_['name'].isin(inactive) == False])
                              .pipe(lambda df_: df_.loc[df_['team'].isin(exclude) == False])
                              .sort_values(by=kwargs.get('sort', 'fpts'), ascending=False)
                              .set_index('name')
@@ -395,13 +422,13 @@ class PropHandler:
         
         df = self.load_slate(**kwargs).drop('fpts-1k', axis=1) # Need to fix upstream cause of duplication
         
-        updated_players = list(set(df.index).difference(set(self.last.index)))
+        # updated_players = list(set(df.index).difference(set(self.last.index)))
         
-        if not len(updated_players):
-            print('No players updated since last scrape.')
-        else:
-            output = ['The following players have been added:'] + [f'   > {name_}' for name_ in updated_players]
-            print(*output, sep='\n')
+        # if not len(updated_players):
+        #     print('No players updated since last scrape.')
+        # else:
+        #     output = ['The following players have been added:'] + [f'   > {name_}' for name_ in updated_players]
+        #     print(*output, sep='\n')
         
         return df.sort_values(kwargs.get('sort', 'value'), ascending=False)
 
@@ -440,24 +467,35 @@ class PropHandler:
 
     def load_team(self, team: str) -> pd.DataFrame:
         try:
-            return self.create_team_dfs[team]
+            return self.create_team_dfs()[team]
         except KeyError:
             print(f'{team} not playing in current contest.\n')
             return pd.DataFrame()
 
     def constant_scrape(self, **kwargs):
-        print('The following players have been added:')
-
+        path = self.datafilepath(f'{self.site}-props{"-sg" if self.mode == "single-game" else ""}')
         while True:
 
-            self.last = self.load_slate(verbose=0)
+            last = set(pd
+                       .read_csv(path)
+                       ['name']
+                      )
+            
             self.ScrapeProps(**kwargs)
-            cur = self.load_slate(verbose=0)
-            output = [
-                f'    --> {name_}'
-                for name_ in list(set(cur.index).difference(set(self.last.index)))
-            ]
-            if len(output): print(*output, sep='\n')
+
+            cur = set(pd
+                      .read_csv(path)
+                      ['name']
+                     )
+
+
+            updated = list(cur.difference(last))
+            if len(updated):
+                msgs = ['Added the following players:']
+                for name in updated:
+                    msgs.append(f'- {name}')
+                self.output_msgs(msgs)
+
         
             # Disguise requests a little bit
             rand_int_sleep_time = random.randint(2, 7)
