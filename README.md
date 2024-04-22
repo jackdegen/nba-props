@@ -43,7 +43,7 @@ $ git clone https://github.com/jackdegen/nba-props
 ```
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-(.venv) $ pip install -r requirments.txt
+(.venv) $ pip install -r requirements.txt
 ```
 
 - If you have **JupyterLab/JupyterNotebook**, I suggest running the code in that as it is easier on the eyes and more interactive if you are familiar with Jupyter.
@@ -63,7 +63,7 @@ $ jupyter-lab
     - All data will have been saved and updated behind the scenes, will not be any output since it runs quietly in background. 
 - A new file will have been created in `data/` containing the info for the NBA slate that day for whichever site you specified.
 - You can read this in with `pd.read_csv()` or simply access it using `handler` to get the data and assign it to a new variable if you would like to further interact with the dataset in a notebook.
-- The `PropHandler` class already has some built in functionality for basic data analysis, so feel free to consult the source code in `src/prophandler/properhandler.py`.
+- The `PropHandler` class already has some built in functionality for basic data analysis, so feel free to consult the source code in `src/prophandler/prophandler.py`.
 
 </br>
 
