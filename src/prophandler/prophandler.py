@@ -6,6 +6,14 @@ import pandas as pd
 
 from propscraper import PropScraper
 
+
+"""
+TODO:
+    - Still way to much repetition for accomodating different sites
+    - Can easily create some functions/classes for conversions, issues, export, etc.
+    - utils file instead of including them in top of PropHandler
+"""
+
 class PropHandler:
     
     @staticmethod
@@ -259,6 +267,14 @@ class PropHandler:
         
         self.last = pd.read_csv(path)
         df.to_csv(path)
+
+        # Exporting to main (private) codebase containing models/model weights, season data, ownership, optimizer, etc
+        # The file private.py contains info which should not be public, thus is kept in .gitignore
+        if os.path.exists(os.path.join(os.getcwd().split('/src')[0], 'src', 'private.py')):
+            import private
+            df.to_csv(private.EXPORT_TEMPLATE.format(site='draftkings'))
+
+            
         
         return
 
@@ -331,12 +347,21 @@ class PropHandler:
         
         self.last = pd.read_csv(path)
         df.to_csv(path)
+
+        # Exporting to main (private) codebase containing models/model weights, season data, ownership, optimizer, etc
+        # The file private.py contains info which should not be public, thus is kept in .gitignore
+        if os.path.exists(os.path.join(os.getcwd().split('/src')[0], 'src', 'private.py')):
+            import private
+            df.to_csv(private.EXPORT_TEMPLATE.format(site='fanduel'))
         
         return
 
     def ScrapeProps(self, **kwargs) -> None:
         """
-        Handler so can just run this function instead of flipping between two above functions
+        Handler so can just run this function instead of flipping between two above functions.
+        Can technically do in one line:
+            - This is more aesthetically pleasing.
+            - Single line conditionals without an assignment look funky.
         """
         if self.site == 'draftkings':
             self.scrape_draftkings(**kwargs)
@@ -385,7 +410,6 @@ class PropHandler:
         fname = f'{self.site}-props{"-sg" if self.mode == "single-game" else ""}'
         
         ret: pd.DataFrame = (pd
-                             # .read_csv(f'../data/{self.site}-props{"-sg" if self.mode == "single-game" else ""}.csv')
                              .read_csv(self.datafilepath(fname))
                              .pipe(lambda df_: df_.loc[df_['name'].isin(inactive) == False])
                              .pipe(lambda df_: df_.loc[df_['team'].isin(exclude) == False])
@@ -409,14 +433,6 @@ class PropHandler:
             self.output_times(self.ScrapeProps, drop_minimums=kwargs.get('drop_minimums', False))
         
         df = self.load_slate(**kwargs).drop('fpts-1k', axis=1) # Need to fix upstream cause of duplication
-        
-        # updated_players = list(set(df.index).difference(set(self.last.index)))
-        
-        # if not len(updated_players):
-        #     print('No players updated since last scrape.')
-        # else:
-        #     output = ['The following players have been added:'] + [f'   > {name_}' for name_ in updated_players]
-        #     print(*output, sep='\n')
         
         return df.sort_values(kwargs.get('sort', 'value'), ascending=False)
 
@@ -479,7 +495,7 @@ class PropHandler:
 
             updated = list(cur.difference(last))
             if len(updated):
-                msgs = ['Added the following players:']
+                msgs = [f'Added the following player{"s" if len(updated) > 1 else ""}:']
                 for name in updated:
                     msgs.append(f'- {name}')
                 self.output_msgs(msgs)
