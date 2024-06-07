@@ -1,3 +1,9 @@
+# Private data
+
+private.py
+src/private.py
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
