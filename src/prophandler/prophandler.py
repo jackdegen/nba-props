@@ -22,7 +22,7 @@ class PropHandler:
     @staticmethod
     def output_msgs(msgs: list[str,...]) -> None:
         """
-        Pretty printer
+        Prettier pretty printer
         """
 
         padding = '='*max([len(msg_) for msg_ in msgs])
@@ -66,7 +66,7 @@ class PropHandler:
         return os.path.join(os.getcwd().split('src')[0], 'data', fname)
 
     @staticmethod
-    def fix_name(name: str) -> str:
+    def clean_name(name: str) -> str:
         """
         Properly formats name so aligns with all data
         """
@@ -213,7 +213,7 @@ class PropHandler:
             'Moe Wagner': 'Moritz Wagner'
         }
         
-        df['name'] = df['name'].map(lambda x: name_issues.get(x, self.fix_name(x)))
+        df['name'] = df['name'].map(lambda x: name_issues.get(x, self.clean_name(x)))
         df['team'] = df['team'].map(lambda x: inits_issues.get(x,x))
         
         df['input'] = tuple(zip(df['name'], df['team']))
@@ -307,7 +307,7 @@ class PropHandler:
             'Moe Wagner': 'Moritz Wagner',
         }
         
-        df['name'] = df['name'].map(lambda x: name_issues.get(x, self.fix_name(x)))
+        df['name'] = df['name'].map(lambda x: name_issues.get(x, self.clean_name(x)))
         df['input'] = df.loc[:,['name','team']].apply(tuple, axis=1)
         df['output'] = df['input'].apply(lambda x: self.scrape_props(*x, 'fanduel'))
         
