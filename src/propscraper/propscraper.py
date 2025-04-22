@@ -67,6 +67,9 @@ class Conversions:
             "KJ Martin": "Kenyon Martin",
             "Devonte Graham": "Devonte' Graham",
             "Shaq Harrison": "Shaquille Harrison",
+            "Robert Dillingham": "Rob Dillingham",
+            'Kenneth Simpson': 'KJ Simpson',
+            # 'KJ Simpson': 'Kenneth Simpson',
         }
 
     def team_name(self, team_str: str) -> str:
@@ -93,6 +96,9 @@ class PropScraper:
 
         self.current_date_str = datetime.datetime.now().strftime("%m/%d")
         # self.current_date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
+
+        if self.current_date_str != datetime.datetime.now().strftime("%m/%d"):
+            print(f'Scraping for {self.current_date_str}\n')
         # self.prop_frames = list()
 
     #     Creates a dictionary containing the links to current and historical props
@@ -150,7 +156,10 @@ class PropScraper:
         return cls.implied_probability(ml) * val
 
     def scrape_player_props(
-        self, name: str, url: str, site: str
+        self,
+        name: str,
+        url: str,
+        site: str
     ) -> tuple[float, float]:
 
         #         Load HTML
@@ -255,6 +264,8 @@ class PropScraper:
                 doubles += 1
 
             overml: str = vals[2]
+            if not len(overml):
+                overml = '+100'
 
             props["e_value"].append(self.expected_value(statval, overml))
 

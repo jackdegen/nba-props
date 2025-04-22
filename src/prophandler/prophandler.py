@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import datetime
 
 import pandas as pd
 
@@ -67,7 +68,7 @@ class PropHandler:
     def datafilepath(fname: str, **kwargs) -> str:
         """
         Returns full file path for data instead of using relative path.
-        TODO: Auto adjusments for single-game
+        TODO: Auto adjusments for showdown
         """
         if ".csv" not in fname:
             fname += ".csv"
@@ -81,7 +82,7 @@ class PropHandler:
         """
         return " ".join(name.split(" ")[:2]).replace(".", "")
 
-    def __init__(self, site, mode):
+    def __init__(self, site: str, mode: str, **kwargs):
         """
         Provides the logistical handling for scraping props with various possible conditions
         Goal of this was to have as a little code in the actual notebook, just interactive stuff.
@@ -92,14 +93,18 @@ class PropHandler:
 
         self.Props = PropScraper()
 
-        # URL directory, indexed firsrt by team, then by name
+        # URL directory, indexed first by team, then by name
         # Directory in typical sense, not computer sense
         self.directory = self.Props.create_webpage_directory()
 
         # Last update
         self.last = pd.read_csv(
-            self.datafilepath(f'{site}-props{"-sg" if mode == "single-game" else ""}')
+            self.datafilepath(f'{site}-props{"-sg" if mode == "showdown" else ""}')
         ).set_index("name")
+
+        self.edits = kwargs.get('edits', dict())
+
+        self.DATA_DIR = os.getcwd().replace('src', 'data')
 
     def save_directory(self) -> None:
         """
@@ -132,10 +137,13 @@ class PropHandler:
         df = pd.read_csv(self.datafilepath("url-directory"))
 
         team_dfs = {
-            team: df.loc[df["team"] == team]
-            .set_index("name")
-            .drop(["team"], axis=1)
-            .T.to_dict()
+            team: (df
+                   .loc[df["team"] == team]
+                   .set_index("name")
+                   .drop(["team"], axis=1)
+                   .T
+                   .to_dict()
+                  )
             for team in df["team"].drop_duplicates()
         }
 
@@ -154,10 +162,17 @@ class PropHandler:
         """
         Scrape props for individual player with site-specific scoring, return zeroes if issues with site / naming / etc.
         """
+        # if name in self.edits:
+        #     return (self.edits[name], 0.5*self.edits[name])
+        
         try:
             return self.Props.scrape_player_props(
-                name, self.directory[team][name], site, **kwargs
+                name,
+                self.directory[team][name],
+                site,
+                **kwargs
             )
+
         except KeyError:
             return (0.0, 0.0)
 
@@ -186,9 +201,10 @@ class PropHandler:
         """
         Scrape props for all players in ../data/current-draftkings.csv and save for those players where props exist.
         """
-
+        verbose = kwargs.get('verbose', 1)
         fname = "current-draftkings"
-        if self.mode == "single-game":
+        inactive = kwargs.get('inactive', list())
+        if self.mode == "showdown":
             fname += "-sg"
 
         columns: dict[str, str] = {
@@ -208,7 +224,7 @@ class PropHandler:
 
         MIN_SAL: int = 3_000 if kwargs.get("drop_minimums", True) else 0
 
-        keep_minimums: tuple[str, ...] = tuple()
+        keep_minimums: tuple[str, ...] = ('Ron Holland',)
         drop_minimums: tuple[str, ...] = tuple(
             [
                 name
@@ -233,7 +249,7 @@ class PropHandler:
                 .str.replace("C/UTIL", "C", regex=False)
                 .str.replace("/[GF]", "", regex=True),
             )
-            .pipe(lambda df_: df_.loc[(df_["name"].isin(drop_minimums) == False)])
+            # .pipe(lambda df_: df_.loc[(df_["name"].isin(drop_minimums) == False)])
             # .pipe(lambda df_: df_.loc[(df_['salary'] > 3_000)])
         )
 
@@ -249,24 +265,26 @@ class PropHandler:
         df["fpts"] = df["output"].map(lambda x: x[0])
         df["e_fpts"] = df["output"].map(lambda x: x[1])
 
+
         for col in ("fpts", "e_fpts"):
             df[f"{col}/$"] = 1000 * (df[col] / df["salary"])
 
         df["5x"] = 5 * (df["salary"] / 1000)
         df["value"] = df["fpts"] - df["5x"]
 
-        df = (
-            df.loc[df["fpts"] > 0.0]
-            .drop(["input", "output", "5x"], axis=1)
-            .assign(fpts_1k=lambda df_: 1000 * df_.fpts / df_.salary)
-            .rename({"fpts_1k": "fpts-1k"}, axis=1)
-            .sort_values("value", ascending=False)
-            .set_index("name")
-            .round(2)
+        df = (df
+              # .loc[df["fpts"] > 0.0]
+              .loc[df['name'].isin(inactive) == False]
+              .drop(["input", "output", "5x"], axis=1)
+              # .assign(fpts_1k=lambda df_: 1000 * df_.fpts / df_.salary)
+              # .rename({"fpts_1k": "fpts-1k"}, axis=1)
+              .sort_values("value", ascending=False)
+              .set_index("name")
+              .round(2)
         )
 
         single_game = (
-            self.mode == "single-game" or len(df["team"].drop_duplicates()) == 2
+            self.mode == "showdown" or len(df["team"].drop_duplicates()) == 2
         )
 
         if single_game:
@@ -280,10 +298,44 @@ class PropHandler:
                 .round(2)
             )
 
-        path = self.datafilepath(f'draftkings-props{"-sg" if single_game else ""}')
+        
+        names_in_edits = set(self.edits.keys())
+        names_in_props = set(df.loc[df['fpts'] > 0.0].index)
 
+        print(f'Prop projection only: {", ".join([name for name in names_in_props if name not in names_in_edits])}')
+
+        df['no-props'] = 0
+        
+        for name, edit in self.edits.items():
+            # Check if has prop projection
+            fpts = df.loc[name, 'fpts'] if name in df.index else -1
+
+            if fpts == -1:
+                # If not in contest pool
+                pass
+            
+            elif fpts > 0.0:
+                # If prop projection
+                if verbose:
+                    symbol = {True: '+', False: '-'}[fpts > edit] * 5
+                    print(f'Player props added for: {name}, projection went from {edit} -> {fpts} ({symbol}).')
+            else:
+                # If no prop projection
+                df.loc[name, 'fpts'] = edit
+                df.loc[name, 'no-props'] = 1
+                
+
+        df = df.loc[df['fpts'] > 0.0]
+
+        for col in ("fpts", "e_fpts"):
+            df[f"{col}/$"] = 1000 * (df[col] / df["salary"])
+
+        path = self.datafilepath(f'draftkings-props{"-sg" if single_game else ""}')
+                
         self.last = pd.read_csv(path)
         df.to_csv(path)
+
+        df.to_csv(os.path.join(self.DATA_DIR, 'historical', f'{datetime.date.today().isoformat()}.csv'))
 
         # Exporting to main (private) codebase containing models/model weights, season data, ownership, optimizer, etc
         # The file private.py contains info which should not be public, thus is kept in .gitignore
@@ -292,7 +344,10 @@ class PropHandler:
         ):
             import private
 
-            df.to_csv(private.EXPORT_TEMPLATE.format(site="draftkings"))
+            for path in private.EXPORT_TEMPLATES:
+                df.to_csv(path.format(site="draftkings"))
+
+            # df.to_csv(private.EXPORT_TEMPLATE.format(site="draftkings"))
 
         return
 
@@ -302,7 +357,7 @@ class PropHandler:
         """
 
         fname = "current-fanduel"
-        if self.mode == "single-game":
+        if self.mode == "showdown":
             fname += "-sg"
 
         columns: dict[str, str] = {
@@ -366,7 +421,7 @@ class PropHandler:
         )
 
         single_game = (
-            self.mode == "single-game" or len(df["team"].drop_duplicates()) == 2
+            self.mode == "showdown" or len(df["team"].drop_duplicates()) == 2
         )
 
         path = self.datafilepath(f'fanduel-props{"-sg" if single_game else ""}')
@@ -380,8 +435,8 @@ class PropHandler:
             os.path.join(os.getcwd().split("/src")[0], "src", "private.py")
         ):
             import private
-
-            df.to_csv(private.EXPORT_TEMPLATE.format(site="fanduel"))
+            # Not saving to new repo as of now
+            df.to_csv(private.EXPORT_TEMPLATES[0].format(site="fanduel"))
 
         return
 
@@ -403,15 +458,15 @@ class PropHandler:
         """
         Counts players for each team to see if evernly spread out
         """
-        df = (
-            df.groupby("team")["team"]
-            .agg(["count"])
-            .set_axis(["num-players"], axis=1)
-            .sort_values("num-players", ascending=False)
-        )
+        df = (df
+              .groupby("team")["team"]
+              .agg(["count"])
+              .set_axis(["num-players"], axis=1)
+              .sort_values("num-players", ascending=False)
+             )
 
         fname = f"current-{self.site}"
-        if self.mode == "single-game":
+        if self.mode == "showdown":
             fname += "-sg"
 
         team_column = "TeamAbbrev" if self.site == "draftkings" else "Team"
@@ -432,15 +487,15 @@ class PropHandler:
         exclude = kwargs.get("exclude", list())
         inactive = kwargs.get("inactive", list())
 
-        fname = f'{self.site}-props{"-sg" if self.mode == "single-game" else ""}'
+        fname = f'{self.site}-props{"-sg" if self.mode == "showdown" else ""}'
 
-        ret: pd.DataFrame = (
-            pd.read_csv(self.datafilepath(fname))
-            .pipe(lambda df_: df_.loc[df_["name"].isin(inactive) == False])
-            .pipe(lambda df_: df_.loc[df_["team"].isin(exclude) == False])
-            .sort_values(by=kwargs.get("sort", "fpts"), ascending=False)
-            .set_index("name")
-        )
+        ret: pd.DataFrame = (pd
+                             .read_csv(self.datafilepath(fname))
+                             .pipe(lambda df_: df_.loc[df_["name"].isin(inactive) == False])
+                             .pipe(lambda df_: df_.loc[df_["team"].isin(exclude) == False])
+                             .sort_values(by=kwargs.get("sort", "fpts"), ascending=False)
+                             .set_index("name")
+                            )
 
         if verbose:
             msg = f"{len(ret)} total players".upper()
@@ -458,12 +513,15 @@ class PropHandler:
             self.output_times(
                 self.ScrapeProps, drop_minimums=kwargs.get("drop_minimums", False)
             )
+        
+        df = self.load_slate(**kwargs)
 
-        df = self.load_slate(**kwargs).drop(
-            "fpts-1k", axis=1
-        )  # Need to fix upstream cause of duplication
+        # inactive = kwargs.get("inactive", list())
 
-        return df.sort_values(kwargs.get("sort", "value"), ascending=False)
+        return (df
+                # .loc[df.index.isin(inactive) == False]
+                .sort_values(kwargs.get("sort", "value"), ascending=False)
+               )
 
     def create_pos_dfs(self):
         if hasattr(self, "pos_dfs"):
@@ -519,8 +577,11 @@ class PropHandler:
 
     def constant_scrape(self, **kwargs):
         path = self.datafilepath(
-            f'{self.site}-props{"-sg" if self.mode == "single-game" else ""}'
+            f'{self.site}-props{"-sg" if self.mode == "showdown" else ""}'
         )
+
+        
+        
         while True:
 
             last = set(pd.read_csv(path)["name"])
