@@ -2,7 +2,7 @@
 
 private.py
 src/private.py
-
+data/historical
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -11,6 +11,9 @@ __pycache__/
 
 # C extensions
 *.so
+
+# JupyterLab Files
+.jupyter_ystore.db
 
 # Distribution / packaging
 .Python
