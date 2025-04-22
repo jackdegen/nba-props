@@ -48,7 +48,7 @@ $ source .venv/bin/activate
 ```
 
 - If you have **JupyterLab/JupyterNotebook**, I suggest running the code in that as it is easier on the eyes and more interactive if you are familiar with Jupyter.
-- *If not, check back here in a few days as I configure the code to work in the Python shell of the command line.*
+- *Direct CLI tool in development. Patches and pull requests welcome.*
 
 ```
 $ jupyter-lab
