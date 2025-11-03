@@ -2,9 +2,9 @@ import requests
 import datetime
 
 import pandas as pd
-
 from bs4 import BeautifulSoup
 
+from designs import Prop, Player
 
 class Conversions:
 
@@ -60,7 +60,7 @@ class Conversions:
             val: key for key, val in self.inits_teams.items()
         }
 
-        #         scoresandodds.com: FanDuel name
+        #         scoresandodds.com: DraftKings name
         self.name_issues: dict[str, str] = {
             "Lu Dort": "Luguentz Dort",
             "Moe Wagner": "Moritz Wagner",
@@ -87,7 +87,7 @@ class Conversions:
 
 class PropScraper:
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Class to scrape individual player props and convert to FPTS
         """
@@ -95,7 +95,9 @@ class PropScraper:
         self.directory_url: str = "https://www.scoresandodds.com/nba/players"
 
         self.current_date_str = datetime.datetime.now().strftime("%m/%d")
-        # self.current_date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
+
+        if kwargs.get('tomorrow', False):
+            self.current_date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
 
         if self.current_date_str != datetime.datetime.now().strftime("%m/%d"):
             print(f'Scraping for {self.current_date_str}\n')
@@ -155,6 +157,13 @@ class PropScraper:
     def expected_value(cls, val: float, ml: str) -> float:
         return cls.implied_probability(ml) * val
 
+    @staticmethod
+    def _parse_moneyline(ml_str: str|None) -> str:
+        if not ml_str:
+            return '+100'
+
+        return str(ml_str)
+
     def scrape_player_props(
         self,
         name: str,
@@ -162,129 +171,67 @@ class PropScraper:
         site: str
     ) -> tuple[float, float]:
 
-        #         Load HTML
+        # Load HTML
         soup = BeautifulSoup(requests.get(url).text, "html.parser")
 
-        # module = soup.find('div', class_="module-body scroll")
-
         try:
-            if not len(soup.find_all("span")):
+            if not soup.find_all("span"):
                 return (0.0, 0.0)
         except AttributeError:
             return (0.0, 0.0)
 
-        #         Make sure current
-        zerofill = lambda dp: f"0{dp}" if len(dp) == 1 else dp
-        date_str = "/".join(
-            [
-                zerofill(dp)
-                for dp in soup.find_all("span")[18].get_text().split(" ")[1].split("/")
-            ]
-        )
+        #         Make sure current, adjust for weird site format
+        zero_fill_date = lambda dp: f"0{dp}" if len(dp) == 1 else dp
+        date_str = "/".join([
+            zero_fill_date(date_part)
+            for date_part in soup.find_all("span")[18].get_text().split(" ")[1].split("/")
+        ])
 
         if date_str != self.current_date_str:
             return (0.0, 0.0)
 
-        # props_rows = soup.find('table', class_='sticky').find('tbody').find_all('tr')
         try:
-            props_rows = (
-                soup.find("table", class_="sticky").find("tbody").find_all("tr")
-            )
+            props_rows = soup.find("table", class_="sticky").find("tbody").find_all("tr")
 
         except AttributeError:
-            print(f"{name} -> Still failing here...")
-            # return (0.0, 0.0)
+            print(f"{name} -> Failing to find table...")
+            return (0.0, 0.0)
 
-        # Steals, blocks are options but noisy, better to use season data for opponents
-
-        site_targets: dict[str, tuple[str, ...]] = {
-            "fanduel": ("Points", "Rebounds", "Assists", "Steals", "Blocks"),
-            "draftkings": (
-                "Points",
-                "Rebounds",
-                "Assists",
-                "3 Pointers",
-                "Steals",
-                "Blocks",
-            ),
-        }
+        site_targets = ['Points', 'Rebounds', 'Assists', '3 Pointers', 'Steals', 'Blocks']
 
         # Form: Category Line Over Under
-        target_rows = [
-            row for row in props_rows if row.find("td").get_text() in site_targets[site]
-        ]
+        target_rows = [row for row in props_rows if row.find("td").get_text() in site_targets]
 
-        # TODO: Figure out more efficient way for this, dict(zip()) probably best
-        props = {
-            # 'name': list(),
-            "stat": list(),
-            "value": list(),
-            # 'over': list(),
-            "e_value": list(),
-            "fpts": list(),
-            "e_fpts": list(),
-            # 'under': list()
-        }
-
-        site_multipliers: dict[str, dict[str, float]] = {
-            "fanduel": {
-                "assists": 1.5,
-                "rebounds": 1.2,
-                "blocks": 3.0,
-                "steals": 3.0,
-                "3 pointers": 0.0,
-            },
-            "draftkings": {
-                "assists": 1.5,
-                "rebounds": 1.25,
-                "3 pointers": 0.5,
-                "blocks": 2.0,
-                "steals": 2.0,
-            },
-        }
-
-        # For DK bonuses
         doubles = 0
-
-        multipliers: dict[str, float] = site_multipliers[site]
+        props = []
         for rowtags in target_rows:
-            vals = [
-                val.get_text().lower() for val in rowtags.find_all("td")
-            ]  # (Category, Line, Over, Under)
+            info = [val.get_text().lower().strip() for val in rowtags.find_all('td')] # (Category, Line, Over, Under)
+            
+            stat = info[0]
+            value = float(info[1])
 
-            stat: str = vals[0]
-            props["stat"].append(stat)
-
-            # Convert to whole number
-            # statval = sum([float(vals[1]), 0.5])
-            statval = sum([float(vals[1]), 0.0])
-            props["value"].append(statval)
-
-            if statval >= 10.0:
+            if value >= 10.0:
                 doubles += 1
 
-            overml: str = vals[2]
-            if not len(overml):
-                overml = '+100'
+            odds_over = self.implied_probability(self._parse_moneyline(info[2]))
+            odds_under = self.implied_probability(self._parse_moneyline(info[3]))
+            
+            props.append(Prop(
+                name=name,
+                date=date_str,
+                stat=stat,
+                value=value,
+                odds_over=odds_over,
+                odds_under=odds_under,
+            ))
+        
+        player = Player(name=name, props=props)
+        fpts, e_fpts = player.fpts, player.e_fpts
+        
+        bonus = {2: 1.5, 3: 4.5}.get(doubles, 0.0)
+        if bonus:
+            fpts += bonus
+            e_fpts += 0.5*bonus
+        
+        return (fpts, e_fpts)
 
-            props["e_value"].append(self.expected_value(statval, overml))
-
-            multi: float = multipliers.get(stat, 1.0)
-            fpts: float = multi * statval
-
-            props["fpts"].append(fpts)
-            props["e_fpts"].append(self.expected_value(fpts, overml))
-            # props['under'].append(vals[3])
-
-        df: pd.DataFrame = pd.DataFrame(props).round(2)
-
-        fpts = df["fpts"].sum()
-
-        if site == "draftkings":
-            if doubles == 2:
-                fpts += 1.5
-
-            elif doubles >= 3:
-                fpts += 4.5
-
-        return (fpts, df["e_fpts"].sum())

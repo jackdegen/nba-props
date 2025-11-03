@@ -91,7 +91,7 @@ class PropHandler:
         self.site = site
         self.mode = mode
 
-        self.Props = PropScraper()
+        self.Props = PropScraper(**kwargs)
 
         # URL directory, indexed first by team, then by name
         # Directory in typical sense, not computer sense
