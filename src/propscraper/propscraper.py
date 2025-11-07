@@ -69,6 +69,7 @@ class Conversions:
             "Shaq Harrison": "Shaquille Harrison",
             "Robert Dillingham": "Rob Dillingham",
             'Kenneth Simpson': 'KJ Simpson',
+            'Alex Sarr': 'Alexandre Sarr'
             # 'KJ Simpson': 'Kenneth Simpson',
         }
 
@@ -197,10 +198,10 @@ class PropScraper:
             print(f"{name} -> Failing to find table...")
             return (0.0, 0.0)
 
-        site_targets = ['Points', 'Rebounds', 'Assists', '3 Pointers', 'Steals', 'Blocks']
+        prop_targets = ['Points', 'Rebounds', 'Assists', '3 Pointers', 'Steals', 'Blocks']
 
         # Form: Category Line Over Under
-        target_rows = [row for row in props_rows if row.find("td").get_text() in site_targets]
+        target_rows = [row for row in props_rows if row.find("td").get_text() in prop_targets]
 
         doubles = 0
         props = []

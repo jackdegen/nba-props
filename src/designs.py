@@ -9,7 +9,10 @@ SCORING = {
     "steals": 2.0,
 }
 
-NAME_ISSUES = {}
+NAME_ISSUES = {
+    'Alex Sarr': 'Alexandre Sarr',
+    'Ron Holland': 'Ronald Holland'
+}
 
 @dataclass(slots=True, frozen=True)
 class Prop:
