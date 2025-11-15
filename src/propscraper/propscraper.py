@@ -100,6 +100,9 @@ class PropScraper:
         if kwargs.get('tomorrow', False):
             self.current_date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
 
+        if kwargs.get('yesterday', False):
+            self.current_date_str = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%m/%d")
+
         if self.current_date_str != datetime.datetime.now().strftime("%m/%d"):
             print(f'Scraping for {self.current_date_str}\n')
         # self.prop_frames = list()
