@@ -41,7 +41,7 @@ $ git clone https://github.com/jackdegen/nba-props
     - They are just installing the external libraries required to run the code ***only*** in this directory, not on your entire machine.
 
 ```
-$ python3 -m venv .venv
+$ python -m venv .venv
 $ source .venv/bin/activate
 (.venv) $ pip install -r requirements.txt
 ```
