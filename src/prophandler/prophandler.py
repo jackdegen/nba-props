@@ -52,16 +52,8 @@ class PropHandler:
                 DATA_DIR,
                 f'{self.site}-props{"-sg" if self.mode == "showdown" else ""}.csv'
             )
-
             
         self.drop += _load_injuries()
-
-        # if not self.edits:
-        #     self.edits = {}
-        # if not self.override_edits:
-        #     self.override_edits = {}
-        # if not self.ownership:
-        #     self.ownership = {}
             
         if not self.scraper:
             if not self.scraper_kwargs:
