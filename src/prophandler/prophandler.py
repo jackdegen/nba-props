@@ -86,7 +86,7 @@ class PropHandler:
 
     def _clean_and_scrape_data(self):
 
-        columns: dict[str, str] = {
+        columns = {
             "Name": "name",
             "Roster Position": "pos",
             "TeamAbbrev": "team",
