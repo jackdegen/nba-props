@@ -1,3 +1,5 @@
+import os
+import glob
 import json
 
 import pandas as pd
@@ -50,3 +52,12 @@ def load_backup_projections(**kwargs) -> dict[str,float]:
         'json': load_json_projections,
         'csv': load_csv_projections,
     }[files[0].split('.')[-1]](files)
+
+def create_historical_props():
+    return (pd
+            .concat([pd.read_csv(f) for f in glob.glob('/home/deegs/devel/repos/nba-props-git/nba-props/data/historical/*.csv')])
+            .groupby('name')
+            ['fpts']
+            .agg('mean')
+            .to_dict()
+           )
