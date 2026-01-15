@@ -103,15 +103,27 @@ def _clean_name(name: str) -> str:
         'Tristan da Silva': 'Tristan Da Silva',
         # 'Hansen Yang': 'Yang Hansen',
         'Yang Hansen': 'Hansen Yang'
-    }.get(name, unidecode.unidecode(" ".join(name.split(" ")[:2]).replace(".", "")))
+    }.get(
+        unidecode.unidecode(name),
+        unidecode.unidecode(" ".join(name.split(" ")[:2]).replace(".", ""))
+    ).strip()
 
+def _clean_team(team: str) -> str:
+    """Clean player name to standard format."""
+    return {'GSW': 'GS', 'SAS': 'SA', 'NOP': 'NO', 'PHX': 'PHO', 'NYK': 'NY'}.get(team, team).strip()
 
-def _load_injuries() -> list[str,...]:
-    fanduel_file = f'/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2025-2026/contest-files/fanduel/main-slate/{datetime.date.today().isoformat()}.csv'
-    # fanduel_file = f'/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2025-2026/contest-files/fanduel/main-slate/{(datetime.date.today()+datetime.timedelta(days=1)).isoformat()}.csv'
+        # player_data = (pd
+        #            .concat([Player(name=player_dict['name'], team=player_dict['team'], fpts=player_dict['stok'], own=player_dict.get('own', 0.0)).df for player_dict in player_dicts if all([player_dict.get('name'), player_dict.get('stok', 0.0) >= min_fpts, player_dict['team'] in set(pd.read_csv('/home/deegs/devel/repos/nba-props-git/nba-props/data/current-draftkings.csv').TeamAbbrev)])])
+        #            .set_index('name')
+        #            .round(2)
+        #           )
+
+def _load_injuries(
+    fanduel_contest_data_path: str = f'/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2025-2026/contest-files/fanduel/main-slate/{datetime.date.today().isoformat()}.csv' 
+) -> list[str,...]:
 
     df = (pd
-          .read_csv(fanduel_file)
+          .read_csv(fanduel_contest_data_path)
           [['Nickname', 'Salary', 'FPPG', 'Injury Indicator']]
           .set_axis(['name', 'salary', 'fpts', 'status'], axis=1)
           .assign(name=lambda df_: df_.name.map(_clean_name))
