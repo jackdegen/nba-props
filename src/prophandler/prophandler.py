@@ -80,7 +80,6 @@ class PropHandler:
                 self.site,
                 team,
             )
-
         except KeyError:
             return (0.0, 0.0, '---')
 
@@ -103,8 +102,6 @@ class PropHandler:
             'CHO': 'CHA',
             'BRK': 'BKN'
         }
-
-        
 
         df = (pd
             .read_csv(self.input_file, usecols=columns)
@@ -213,10 +210,6 @@ class PropHandler:
         else:
             if not self.constant:
                 _output_msgs(['No prop movement since last scrape.'])
-
-
-        if not os.path.exists(historical_path):
-            df.to_csv(historical_path.replace('.csv', '-backup.csv'))
             
         df.to_csv(historical_path)
         df.to_csv(self.output_file)
@@ -257,21 +250,24 @@ class PropHandler:
 
 
     def load_slate(self, **kwargs) -> pd.DataFrame:
-        # verbose = kwargs.get("verbose", 1)
-        # exclude = kwargs.get("exclude", list())
-        # inactive = kwargs.get("inactive", list())
+        """
+        Designed so that you can reload data without having to do full scrape
+        (example: ownership edits input, updated injury so want to drop, etc.)
+        """
 
-        ret: pd.DataFrame = (pd
-                             .read_csv(self.output_file)
-                             .pipe(lambda df_: df_.loc[df_["name"].isin(self.drop) == False])
-                             .set_index("name")
-                             .assign(own=lambda df_: df_.index.map(lambda name: self.ownership.get(name, 0.1)))
-                             .sort_values(kwargs.get('sort', 'e_fpts/$'), ascending=False)
-                            )
+        df = (pd
+            .read_csv(self.output_file)
+            .pipe(lambda df_: df_.loc[df_["name"].isin(self.drop) == False])
+            .set_index("name")
+            .assign(own=lambda df_: df_.index.map(lambda name: self.ownership.get(name, 0.1)))
+            .sort_values(kwargs.get('sort', 'e_fpts/$'), ascending=False)
+             )
 
-        _output_msgs([f"{len(ret)} total players".upper(), self.player_distribution(ret)])
+        df.to_csv(self.output_file)
 
-        return ret
+        _output_msgs([f"{len(df)} total players".upper(), self.player_distribution(df)])
+
+        return df
         
     @_timeit
     def load(self, **kwargs) -> pd.DataFrame:
@@ -286,11 +282,14 @@ class PropHandler:
 
 
     @_timeit
-    def constant_scrape(self, **kwargs):
-        # path = self.datafilepath(
-        #     f'{self.site}-props{"-sg" if self.mode == "showdown" else ""}'
-        # )
-        
+    def constant_scrape(self, max_runs: int = 100, **kwargs):
+        """
+        - Constantly scrapes so always have most update files
+        - Works with PropTracker to give line movement on all 
+            props and fpts for all players throughout the day
+        - Need to be wary of rate limits, IP blocked, etc.
+        - Default max = 100
+        """
         total_runs = 0
         while True:
             output_movement = False
@@ -300,11 +299,9 @@ class PropHandler:
                 output_movement = True
                 _output_msgs([f'Performing scrape #{total_runs}'])
             self._post_scrape_processing( self._clean_and_scrape_data(), output_movement=output_movement )
-            # self.ScrapeProps(output_movement=output_movement, **kwargs)
 
             total_runs += 1
-            # time.sleep(10)
             time.sleep(random.randint(30,60))
-            if total_runs > 100:
+            if total_runs > max_runs:
                 break
         return
