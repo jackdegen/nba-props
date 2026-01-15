@@ -3,6 +3,7 @@
 private.py
 src/private.py
 data/historical
+src/friends_src
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
