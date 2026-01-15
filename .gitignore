@@ -2,6 +2,7 @@
 
 private.py
 src/private.py
+src/sandbox.ipynb
 data/historical
 src/friends_src
 src/prophandler/proptrackers/*
