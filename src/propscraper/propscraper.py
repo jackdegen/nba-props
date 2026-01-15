@@ -5,10 +5,9 @@ import random
 import pandas as pd
 from bs4 import BeautifulSoup
 
-from __utils import _clean_name, output_msgs
 from designs import MoneyLine, Prop, Player
-
-from .conversions import Conversions
+from .conversions import TEAM_INITIALS_MAP
+from __utils import _clean_name, _clean_team, output_msgs
 
 class PropScraper:
 
@@ -16,7 +15,7 @@ class PropScraper:
         """
         Class to scrape individual player props and convert to FPTS
         """
-        self.convert = Conversions()
+        self.site = kwargs.get('site', 'draftkings')
         self.directory_url: str = "https://www.scoresandodds.com/nba/players"
 
         self.scoresandodds_date_str = datetime.datetime.now().strftime("%m/%d")
@@ -42,20 +41,16 @@ class PropScraper:
 
         #         Load each team data into dictionary, converting the full team name into initials as used in rest of data
         team_modules = {
-            self.convert.team_name(team_html.find("h3").get_text()): team_html.find_all(
+            team_html.find("h3").get_text(): team_html.find_all(
                 "div", class_="module-body"
             )[0].find("ul")
             for team_html in soup.find_all("div", class_="module")
         }
 
-        # clean_name = lambda name: self.convert.player_name(
-        #     " ".join(name.split(" ")[:2]).replace(".", "")
-        # )
-
         #         Parse HTML data for each team to organize links in easily searchable manner
         # {team: {name: url, ...}, ...}
         webpage_directory = {
-            team: {
+            TEAM_INITIALS_MAP.get(team, team): {
                 _clean_name(a_tag.get_text()): self.directory_url.replace(
                     "/nba/players", a_tag["href"]
                 )
@@ -77,7 +72,6 @@ class PropScraper:
         return sorted(
             (datetime.datetime.now() - datetime.timedelta(days=N)).strftime("%m/%d")
             for N in range_
-            # for N in range(1,6)
         )
 
 
@@ -129,25 +123,6 @@ class PropScraper:
         failed_scrape_return = (0.0, 0.0, '---')
         fallback = False # Tempermental ~ in progress
 
-
-        # ####################################################################################################
-        
-        # if name == 'Kelly Olynyk':
-        #     props = []
-        #     props.append(Prop(name=name, date_str='01/03', stat='points', value=6.5, odds_over=MoneyLine('-122').implied_probability, odds_under=MoneyLine('-111').implied_probability))
-        #     props.append(Prop(name=name, date_str='01/03', stat='rebounds', value=3.5, odds_over=MoneyLine('-128').implied_probability, odds_under=MoneyLine('-105').implied_probability))
-        #     props.append(Prop(name=name, date_str='01/03', stat='assists', value=2.5, odds_over=MoneyLine('+120').implied_probability, odds_under=MoneyLine('-162').implied_probability))
-        #     props.append(Prop(name=name, date_str='01/03', stat='steals', value=0.5, odds_over=MoneyLine('-195').implied_probability, odds_under=MoneyLine('+145').implied_probability))
-        #     props.append(Prop(name=name, date_str='01/03', stat='blocks', value=0.5, odds_over=MoneyLine('+145').implied_probability, odds_under=MoneyLine('-195').implied_probability))
-        #     props.append(Prop(name=name, date_str='01/03', stat='3 pointers', value=0.5, odds_over=MoneyLine('-145').implied_probability, odds_under=MoneyLine('+110').implied_probability))
-        #     props.append(Prop(name=name, date_str='01/03', stat='turnovers', value=1.5, odds_over=MoneyLine('+100').implied_probability, odds_under=MoneyLine('+100').implied_probability))
-
-            # player = Player(name=name, props=props)
-            # fpts, e_fpts = player.fpts, player.e_fpts
-
-            # return fpts, e_fpts, 'PRASB3T**'
-
-        # ####################################################################################################
         try:
             if not soup.find_all("span"):
                 return failed_scrape_return
@@ -214,26 +189,6 @@ class PropScraper:
             if value >= 9.5:
                 doubles += 1
                 doubles_implied_odds.append(implied_odds_over/sum([implied_odds_over, implied_odds_under]))
-
-            # if name in ['Cam Spencer', 'Vince Williams']:
-            #     if stat == 'points':
-            #         value -= 1.0
-            #     if stat == 'assists':
-            #         value -= 1.0
-            #     if stat == '3 pointers':
-            #         value -= 1.0
-            # if name == 'Cam Spencer' and stat == 'steals':
-            #     value -= 1.0
-
-            # if name == 'Ajay Mitchell':
-            #     if stat == 'points':
-            #         value += 1.0
-            #     elif stat == 'assists':
-            #         value += 1.0
-            #     elif stat == '3 pointers':
-            #         value += 1.0
-            #     elif stat == 'steals':
-            #         value += 1.0
                     
             props.append(Prop(
                 name=name,
@@ -245,13 +200,12 @@ class PropScraper:
             ))
 
         
-        player = Player(name=name, props=props)
+        player = Player(name=name, props=props, site=self.site)
         fpts, e_fpts = player.fpts, player.e_fpts
         
         bonus = {2: 1.5, 3: 4.5}.get(doubles, 0.0)
         if bonus:
             fpts += bonus
-            # e_fpts += 0.5*bonus
             
             e_factor = 1.0
             for implied_odds in doubles_implied_odds:

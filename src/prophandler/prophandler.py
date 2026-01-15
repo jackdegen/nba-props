@@ -7,12 +7,12 @@ import pandas as pd
 
 from dataclasses import dataclass, field
 
-from designs import NAME_ISSUES
 from propscraper import PropScraper
 from .proptracker import PropTracker
 
 from __utils import (
     _clean_name,
+    _clean_team,
     _load_injuries,
     _output_msgs,
     _timeit,
@@ -30,7 +30,7 @@ class PropHandler:
     verbose: bool = False
     drop: list[str,...] = field(default_factory=list)
     edits: dict[str,float] = field(default_factory=dict)
-    override_edits: dict[str,float] = field(default_factory=dict)
+    override_edits: dict[str,float]|list[str,...] = field(default_factory=dict)
     ownership: dict[str,float] = field(default_factory=dict)
     scraper: PropScraper|None = None
     scraper_kwargs: dict[str,bool] = field(default_factory=dict)
@@ -43,8 +43,8 @@ class PropHandler:
                 DATA_DIR,
                 f'current-{self.site}{"-sg" if self.mode == "showdown" else ""}.csv'
             )
-
-        if len(pd.read_csv(self.input_file).TeamAbbrev.drop_duplicates()) == 2:
+        
+        if len(set(pd.read_csv(self.input_file).set_index('Name').TeamAbbrev)) == 2:
             self.mode = 'showdown'
         
         if not self.output_file:
@@ -54,6 +54,9 @@ class PropHandler:
             )
             
         self.drop += _load_injuries()
+
+        if isinstance(self.override_edits, list):
+            self.override_edits = {name_: self.edits[name_] for name_ in self.override_edits}
             
         if not self.scraper:
             if not self.scraper_kwargs:
@@ -93,15 +96,6 @@ class PropHandler:
             'Game Info': 'game',
         }
 
-        inits_issues = {
-            "SAS": "SA",
-            "PHX": "PHO",
-            "GSW": "GS",
-            "NOP": "NO",
-            "NYK": "NY",
-            'CHO': 'CHA',
-            'BRK': 'BKN'
-        }
 
         df = (pd
             .read_csv(self.input_file, usecols=columns)
@@ -109,9 +103,9 @@ class PropHandler:
             .assign(
                 name=lambda df_: df_.name.apply(_clean_name),
                 salary=lambda df_: df_.salary.astype('int'),
-                team=lambda df_: df_.team.map(lambda team_: inits_issues.get(team_, team_)),
+                team=lambda df_: df_.team.apply(_clean_team),
                 pos=lambda df_: df_.pos.str.replace("/[GF]/UTIL", "", regex=True).str.replace("C/UTIL", "C", regex=False).str.replace("/[GF]", "", regex=True),
-                opp=lambda df_: df_[['game', 'team']].apply(lambda row: [inits_issues.get(team_, team_) for team_ in row.game.split(' ')[0].split('@') if team_ != row.team].pop(), axis=1),
+                opp=lambda df_: df_[['game', 'team']].apply(lambda row: [_clean_team(team_) for team_ in row.game.split(' ')[0].split('@') if team_ != row.team].pop(), axis=1),
                 gametime=lambda df_: df_.game.apply(self._parse_gametime_str)
             )
             .pipe(lambda df_: df_.loc[(df_.pos != "CPT") & (df_.name.isin(self.drop) == False), ['name', 'pos', 'salary', 'team', 'opp', 'gametime']])
@@ -171,7 +165,7 @@ class PropHandler:
         for col in ("fpts", "e_fpts"):
             df[f"{col}/$"] = 1_000 * (df[col] / df.salary)
 
-        
+        df = df.loc[df.fpts > 0.0].dropna().assign(salary=lambda df_: df_.salary.astype('int'))
 
         open_props = self.tracker.data().props_open.round(2).to_dict() if self.tracker else df.fpts.round(2).to_dict()
         open_e_props = self.tracker.data().e_props_open.round(2).to_dict() if self.tracker else df.e_fpts.round(2).to_dict()
@@ -179,15 +173,13 @@ class PropHandler:
         df['open'] = df.index.map(lambda name: open_props.get(name, 0.0))
         df['e_open'] = df.index.map(lambda name: open_e_props.get(name, 0.0))
 
-        df = df.loc[df.fpts > 0.0]
-
         df.loc[(df.open == 0.0) & (df.fpts > 0.0), 'open'] = df.loc[(df.open == 0.0) & (df.fpts > 0.0), 'fpts']
         df.loc[(df.e_open == 0.0) & (df.e_fpts > 0.0), 'e_open'] = df.loc[(df.open == 0.0) & (df.e_fpts > 0.0), 'e_fpts']
 
         df['movement'] = (df.fpts-df.open).round(2)
         df['e_movement'] = (df.e_fpts-df.e_open).round(2)
 
-
+        
         if self.verbose:
             for name, row in df.loc[df.movement != 0.0, ['fpts', 'open', 'movement']].iterrows():
                 print(f'Prop movement for {name}: {row["open"]} -> {row["fpts"]} = {row["movement"]} move')
@@ -258,8 +250,12 @@ class PropHandler:
         df = (pd
             .read_csv(self.output_file)
             .pipe(lambda df_: df_.loc[df_["name"].isin(self.drop) == False])
+            # .dropna()
             .set_index("name")
-            .assign(own=lambda df_: df_.index.map(lambda name: self.ownership.get(name, 0.1)))
+            .assign(
+                # salary=lambda df_: df_.salary.astype('int'),
+                own=lambda df_: df_.index.map(lambda name: self.ownership.get(name, 0.1))
+            )
             .sort_values(kwargs.get('sort', 'e_fpts/$'), ascending=False)
              )
 
