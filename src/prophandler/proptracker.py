@@ -13,7 +13,7 @@ class PropTracker:
     latest_time: str|None = None
     # offset: int = -15 
 
-    # For computer being fast
+    # For deegs computer being fast
     @staticmethod
     def current_time(offset: int = -15):
         return (datetime.datetime.now() + datetime.timedelta(minutes=offset)).strftime("%H:%M")
@@ -22,9 +22,11 @@ class PropTracker:
     def _just_moved(props_: list[float,...]):
         if len(props_) < 2:
             return 1
-
-        return 1 if props_[-1] != props_[-2] else 0
-
+        try:
+            return 1 if any(props_[-n] != props_[-1*(n+1)] for n in range(1,3)) else 0
+        except IndexError:
+            return 1
+    
     def __post_init__(self):
 
         self.source = f'/home/deegs/devel/repos/nba-props-git/nba-props/src/prophandler/proptrackers/{self.date_str}.parquet'
@@ -86,7 +88,7 @@ class PropTracker:
 
 
     def visualize(self, name: str, value: str = 'e_props') -> pd.DataFrame:
-        df = self.data().loc[name] #, ['props', 'e_props']]
+        df = self.data().loc[name]
     
         n_props = len(list(df.props))
         
