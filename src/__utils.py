@@ -33,23 +33,38 @@ def _clean_team(team: str) -> str:
     """Clean player name to standard format."""
     return {'GSW': 'GS', 'SAS': 'SA', 'NOP': 'NO', 'PHX': 'PHO', 'NYK': 'NY'}.get(team, team).strip()
 
-def _load_injuries(fanduel_contest_data_path: str = f'/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2025-2026/contest-files/fanduel/main-slate/{datetime.date.today().isoformat()}.csv' ) -> list[str,...]:
+def _load_injuries(
+    fanduel_contest_data_path: str = f'/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2025-2026/contest-files/fanduel/main-slate/{datetime.date.today().isoformat()}.csv',
+    report: bool = False # Verbose flag
+) -> list[str,...]:
     """
     Load injured players from FanDuel contest file
     Returns both Out players and Doubtful players
     """
+    abbreviations = {'GTD': 'Game-time Decision', 'P': 'Probable', 'D': 'Doubtful', 'O': 'Out'}
+    
     df = (pd
           .read_csv(fanduel_contest_data_path)
-          [['Nickname', 'Salary', 'FPPG', 'Injury Indicator']]
-          .set_axis(['name', 'salary', 'fpts', 'status'], axis=1)
-          .assign(name=lambda df_: df_.name.map(_clean_name))
+          [['Nickname', 'Played', 'Salary', 'FPPG', 'Injury Indicator']]
+          .set_axis(['name', 'n_games', 'salary', 'fpts', 'status'], axis=1)
+          .assign(name=lambda df_: df_.name.map(_clean_name), fpts_1k=lambda df_: 1_000 * (df_.fpts / df_.salary))
           # .pipe(lambda df_: df_.loc[(df_.salary > 3_500)])
-          .pipe(lambda df_: df_.loc[(df_.salary > 4_000) | (df_.fpts > 15.0)])
+          .pipe(lambda df_: df_.loc[((df_.salary > 4_000) | (df_.fpts >= 20.0)) & ((df_.n_games >= 10) & (df_.fpts_1k <= 6.0))])
           .set_index('name')
          )
     
-    injuries = {status: sorted(df.loc[df.status == status].index, key=lambda name_: df.loc[name_, 'salary'], reverse=True) for status in {'GTD', 'D', 'O'}}
+    injuries = {status: sorted(df.loc[df.status == status].index, key=lambda name_: df.loc[name_, 'salary'], reverse=True) for status in abbreviations}
 
+    if report:
+        report_msgs = []
+        for status, players in injuries.items():
+            report_msgs.extend(sum([
+                [f'{abbreviations[status]}:'],
+                [f'  - {_clean_name(p)}' for p in players]
+            ], []))
+
+        _output_msgs(report_msgs, char='*')
+    
     return sorted(injuries['O'] + injuries['D'])
 
 def _output_msgs(msgs: str|list[str,...], char=None, warning=False) -> None:
