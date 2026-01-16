@@ -150,7 +150,6 @@ class PropScraper:
             date_str != self.scoresandodds_date_str,
             not date_str in self._past_week_date_strs(team=team) 
         ]):
-            # skip_teams = {'MEM'}
             next_date_index = self._determine_next_date_index(soup.find_all('span'))
             date_str = "/".join([
                 zero_fill_date(date_part)
