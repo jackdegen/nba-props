@@ -60,7 +60,10 @@ class PropHandler:
             
         if not self.scraper:
             if not self.scraper_kwargs:
-                self.scraper_kwargs = {}
+                self.scraper_kwargs = {'site': self.site}
+            elif 'site' not in self.scraper_kwargs:
+                self.scraper_kwargs['site'] = self.site
+                
             self.scraper = PropScraper(**self.scraper_kwargs)
 
         self.directory = self.scraper.create_webpage_directory()

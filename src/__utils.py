@@ -86,6 +86,8 @@ def load_injuries() -> list[str,...]:
     return sorted(injuries['O'] + injuries['D'])
 
 # ######################################################################################################################################################
+# REFACTOR IN PROGRESS
+# ######################################################################################################################################################
 
 def _clean_name(name: str) -> str:
     return {
@@ -111,6 +113,7 @@ def _clean_name(name: str) -> str:
 def _clean_team(team: str) -> str:
     """Clean player name to standard format."""
     return {'GSW': 'GS', 'SAS': 'SA', 'NOP': 'NO', 'PHX': 'PHO', 'NYK': 'NY'}.get(team, team).strip()
+    # return {'GSW': 'GS', 'NOP': 'NO', 'NYK': 'NY'}.get(team, team).strip()
 
         # player_data = (pd
         #            .concat([Player(name=player_dict['name'], team=player_dict['team'], fpts=player_dict['stok'], own=player_dict.get('own', 0.0)).df for player_dict in player_dicts if all([player_dict.get('name'), player_dict.get('stok', 0.0) >= min_fpts, player_dict['team'] in set(pd.read_csv('/home/deegs/devel/repos/nba-props-git/nba-props/data/current-draftkings.csv').TeamAbbrev)])])

@@ -9,21 +9,25 @@ from designs import MoneyLine, Prop, Player
 from .conversions import TEAM_INITIALS_MAP
 from __utils import _clean_name, _clean_team, output_msgs
 
-class PropScraper:
+from dataclasses import dataclass
 
-    def __init__(self, **kwargs):
+@dataclass
+class PropScraper:
+    site: str = 'draftkings'
+    directory_url: str = "https://www.scoresandodds.com/nba/players"
+    scoresandodds_date_str: str = datetime.datetime.now().strftime("%m/%d")
+    tomorrow: bool = False
+    yesterday: bool = False
+
+    def __post_init__(self, **kwargs):
         """
         Class to scrape individual player props and convert to FPTS
         """
-        self.site = kwargs.get('site', 'draftkings')
-        self.directory_url: str = "https://www.scoresandodds.com/nba/players"
-
-        self.scoresandodds_date_str = datetime.datetime.now().strftime("%m/%d")
-
-        if kwargs.get('tomorrow', False):
+        
+        if self.tomorrow:
             self.scoresandodds_date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
 
-        if kwargs.get('yesterday', False):
+        if self.yesterday:
             self.scoresandodds_date_str = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%m/%d")
 
         if self.scoresandodds_date_str != datetime.datetime.now().strftime("%m/%d"):
@@ -121,7 +125,7 @@ class PropScraper:
         # Load HTML
         soup = BeautifulSoup(requests.get(url).text, "html.parser")
         failed_scrape_return = (0.0, 0.0, '---')
-        fallback = False # Tempermental ~ in progress
+        fallback = False # Tempermental ~ in progress but nullified in _past_week_date_strs being empty
 
         try:
             if not soup.find_all("span"):
@@ -137,6 +141,7 @@ class PropScraper:
         ])
 
         # Players who dont often have props but get them because of injuries will still be posted (and overweighted) for the next slate
+        # No way to determine length of injuries affecting recent props though
         if all([
             date_str != self.scoresandodds_date_str,
             date_str in self._past_week_date_strs(team=team)
