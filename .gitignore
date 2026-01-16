@@ -2,7 +2,7 @@
 
 private.py
 src/private.py
-src/props-private.ipynb # Personal notebook
+src/props-private.ipynb
 src/sandbox.ipynb
 data/historical
 data/historical_*
