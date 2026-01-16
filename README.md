@@ -6,8 +6,7 @@
 - Different settings in `src/props.ipynb` for DraftKings or FanDuel (`SITE`), Classic or Single Game contests (`MODE`).
 - Input provided contest files from DFS sites in `data/` as `current-{site}.csv`; if Single Game, add `-sg` before `.csv` in file name.
     - Only manual step required from user besides toggling desired settings.
-- Alerts to let you know what players have had props added since last run-through.
-    - Initial run through will spit out large list of names
+- Additional output of line movments after initial run.
 - Calculates `fpts` according to site rules, hence requirement to toggle setting.
     - Uses provided salaries to determine best allocation of salary for players as FPTS / $1,000, `fpts/$`.
 - Factors in implied probabilities of player props for separate value of "Expected Fantasy Points", `e_fpts`.
