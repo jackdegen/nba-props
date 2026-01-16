@@ -4,7 +4,7 @@ private.py
 src/private.py
 src/sandbox.ipynb
 data/historical
-data/historical*
+data/historical_*
 data/backup_projections.json
 src/friends_src
 src/prophandler/proptrackers/*
