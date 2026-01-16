@@ -1,15 +1,13 @@
 import requests
 import datetime
 import random
-
 import pandas as pd
 from bs4 import BeautifulSoup
+from dataclasses import dataclass
 
 from designs import MoneyLine, Prop, Player
 from .conversions import TEAM_INITIALS_MAP
-from __utils import _clean_name, _clean_team, output_msgs
-
-from dataclasses import dataclass
+from __utils import _clean_name, _clean_team
 
 @dataclass
 class PropScraper:

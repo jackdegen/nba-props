@@ -2,14 +2,11 @@ import os
 import random
 import time
 import datetime
-
 import pandas as pd
-
 from dataclasses import dataclass, field
 
-from __utils import _clean_name
-
 import settings.custom
+from __utils import _clean_name
 
 SCORING = {
     'draftkings': {

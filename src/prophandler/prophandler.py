@@ -2,14 +2,11 @@ import os
 import random
 import time
 import datetime
-
 import pandas as pd
-
 from dataclasses import dataclass, field
 
 from propscraper import PropScraper
 from .proptracker import PropTracker
-
 from __utils import (
     _clean_name,
     _clean_team,
