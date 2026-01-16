@@ -164,7 +164,6 @@ class PropHandler:
             df.loc[name, 'fpts'] = override_edit
             df.loc[name, 'e_fpts'] = 0.5*override_edit
 
-
         for col in ("fpts", "e_fpts"):
             df[f"{col}/$"] = 1_000 * (df[col] / df.salary)
 
@@ -182,7 +181,6 @@ class PropHandler:
         df['movement'] = (df.fpts-df.open).round(2)
         df['e_movement'] = (df.e_fpts-df.e_open).round(2)
 
-        
         if self.verbose:
             for name, row in df.loc[df.movement != 0.0, ['fpts', 'open', 'movement']].iterrows():
                 print(f'Prop movement for {name}: {row["open"]} -> {row["fpts"]} = {row["movement"]} move')
@@ -232,7 +230,6 @@ class PropHandler:
               .sort_values("num-players", ascending=False)
              )
 
-
         team_column = "TeamAbbrev" if self.site == "draftkings" else "Team"
         total_teams = len(pd.read_csv(self.input_file, usecols=[team_column])[team_column].drop_duplicates())
 
@@ -253,12 +250,8 @@ class PropHandler:
         df = (pd
             .read_csv(self.output_file)
             .pipe(lambda df_: df_.loc[df_["name"].isin(self.drop) == False])
-            # .dropna()
             .set_index("name")
-            .assign(
-                # salary=lambda df_: df_.salary.astype('int'),
-                own=lambda df_: df_.index.map(lambda name: self.ownership.get(name, 0.1))
-            )
+            .assign(own=lambda df_: df_.index.map(lambda name: self.ownership.get(name, 0.1)))
             .sort_values(kwargs.get('sort', 'e_fpts/$'), ascending=False)
              )
 
