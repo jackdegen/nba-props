@@ -166,8 +166,8 @@ class PropHandler:
 
         df = df.loc[df.fpts > 0.0].dropna().assign(salary=lambda df_: df_.salary.astype('int'))
 
-        open_props = self.tracker.data().props_open.round(2).to_dict() if self.tracker else df.fpts.round(3).to_dict()
-        open_e_props = self.tracker.data().e_props_open.round(2).to_dict() if self.tracker else df.e_fpts.round(3).to_dict()
+        open_props = self.tracker.data().props_open.round(3).to_dict() if self.tracker else df.fpts.round(3).to_dict()
+        open_e_props = self.tracker.data().e_props_open.round(3).to_dict() if self.tracker else df.e_fpts.round(3).to_dict()
 
         df['open'] = df.index.map(lambda name: open_props.get(name, 0.0))
         df['e_open'] = df.index.map(lambda name: open_e_props.get(name, 0.0))
