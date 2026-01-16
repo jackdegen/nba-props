@@ -3,7 +3,7 @@ import datetime
 import random
 import pandas as pd
 from bs4 import BeautifulSoup
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from designs import MoneyLine, Prop, Player
 from .conversions import TEAM_INITIALS_MAP
@@ -14,6 +14,7 @@ class PropScraper:
     site: str = 'draftkings'
     directory_url: str = "https://www.scoresandodds.com/nba/players"
     scoresandodds_date_str: str = datetime.datetime.now().strftime("%m/%d")
+    team_date_ranges: dict[str, range] = field(default_factory=dict)
     tomorrow: bool = False
     yesterday: bool = False
 
@@ -63,13 +64,12 @@ class PropScraper:
 
         return webpage_directory
 
-    @staticmethod
-    def _past_week_date_strs(team: str|None = None) -> list[str,...]:
+    def _past_week_date_strs(self, team: str|None = None) -> list[str,...]:
         """
         Return past week of datestrs in website form to determine if non-current dates
         are recent enough to use as a fallback
         """
-        range_ = {}.get(team, range(0,1))
+        range_ = self.team_date_ranges.get(team, range(0,1))
         
         return sorted(
             (datetime.datetime.now() - datetime.timedelta(days=N)).strftime("%m/%d")
@@ -144,7 +144,7 @@ class PropScraper:
             date_str != self.scoresandodds_date_str,
             date_str in self._past_week_date_strs(team=team)
         ]):
-            fallback = True
+            fallback = False
         
         elif all([
             date_str != self.scoresandodds_date_str,
