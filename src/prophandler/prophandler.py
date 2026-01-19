@@ -105,7 +105,7 @@ class PropHandler:
                 salary=lambda df_: df_.salary.astype('int'),
                 team=lambda df_: df_.team.apply(_clean_team),
                 pos=lambda df_: df_.pos.str.replace("/[GF]/UTIL", "", regex=True).str.replace("C/UTIL", "C", regex=False).str.replace("/[GF]", "", regex=True),
-                opp=lambda df_: df_[['game', 'team']].apply(lambda row: [_clean_team(team_) for team_ in row.game.split(' ')[0].split('@') if team_ != row.team].pop(), axis=1),
+                opp=lambda df_: df_[['game', 'team']].apply(lambda row: [_clean_team(team_) for team_ in row.game.split(' ')[0].split('@') if _clean_team(team_) != _clean_team(row.team)].pop(), axis=1),
                 gametime=lambda df_: df_.game.apply(self._parse_gametime_str)
             )
             .pipe(lambda df_: df_.loc[(df_.pos != "CPT") & (df_.name.isin(self.drop) == False), ['name', 'pos', 'salary', 'team', 'opp', 'gametime']])
@@ -119,10 +119,12 @@ class PropHandler:
         df["e_fpts"] = df.output.map(lambda x: x[1])
         df["props"] = df.output.map(lambda x: x[2])
 
+        # df[['fpts', 'e_fpts', 'props']] = df[['name', 'team']].apply(lambda row: self._run_prop_scrape(row.name, row.team), axis=1)
+
         df = (df
               .drop(["input", "output"], axis=1)
               .set_index("name")
-              .round(2)
+              # .round(2)
         )
 
         if self.mode == 'showdown':
