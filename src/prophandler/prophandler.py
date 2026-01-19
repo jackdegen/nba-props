@@ -7,7 +7,8 @@ from dataclasses import dataclass, field
 
 from propscraper import PropScraper
 from .proptracker import PropTracker
-from __utils import (
+from designs import _load_data_dir
+from _utils import (
     _clean_name,
     _clean_team,
     _load_injuries,
@@ -15,7 +16,7 @@ from __utils import (
     _timeit,
 )
 
-DATA_DIR = os.getcwd().replace('src', 'data')
+DATA_DIR = _load_data_dir()
 
 @dataclass
 class PropHandler:

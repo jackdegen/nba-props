@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from designs import MoneyLine, Prop, Player
 from .conversions import TEAM_INITIALS_MAP
-from __utils import _clean_name, _clean_team
+from _utils import _clean_name, _clean_team
 
 @dataclass
 class PropScraper:
