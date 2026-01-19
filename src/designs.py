@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 
 import settings.custom
 from __utils import _clean_name
+from __errors import IncorrectInstallError
 
 SCORING = {
     'draftkings': {
@@ -38,14 +39,19 @@ CONTEST_DATE_STR = datetime.date.today().isoformat()
 
 # Current date -> MM/DD -> site's date format used to determine if up-to-date props
 SITE_CURRENT_DATE_STR = datetime.datetime.now().strftime("%m/%d")
-
 # Toggle commented out for switching to props: yesterday, tomorrow, etc. -> ensure input data aliged
 # SITE_CURRENT_DATE_STR = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
 
 # Data directory where all non-python files are stored
 # Made global for easy configuration to other destinations
-# Default (current) is defined only relative to this project and works right away
-DATA_DIR = os.getcwd().replace('src', 'data')
+# Default is defined only relative to this project and works right away
+def _load_data_dir(data_dir: str) -> str:
+    if not os.path.exists(path):
+        raise IncorrectInstallError
+    return path
+
+default_data_dir = os.getcwd().replace('src', 'data')
+DATA_DIR = _load_data_dir(data_dir=default_data_dir)
 
 @dataclass(frozen=True, slots=True)
 class MoneyLine:
