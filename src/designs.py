@@ -6,8 +6,8 @@ import pandas as pd
 from dataclasses import dataclass, field
 
 import settings.custom
-from __utils import _clean_name
-from __errors import IncorrectInstallError
+from _utils import _clean_name
+from _errors import IncorrectInstallError
 
 SCORING = {
     'draftkings': {
@@ -45,13 +45,15 @@ SITE_CURRENT_DATE_STR = datetime.datetime.now().strftime("%m/%d")
 # Data directory where all non-python files are stored
 # Made global for easy configuration to other destinations
 # Default is defined only relative to this project and works right away
-def _load_data_dir(data_dir: str) -> str:
-    if not os.path.exists(path):
-        raise IncorrectInstallError
-    return path
-
 default_data_dir = os.getcwd().replace('src', 'data')
-DATA_DIR = _load_data_dir(data_dir=default_data_dir)
+def _load_data_dir(data_dir: str|None = default_data_dir) -> str:
+    if not data_dir:
+        data_dir = default_data_dir
+    if not os.path.exists(data_dir):
+        raise IncorrectInstallError
+    return data_dir
+
+DATA_DIR = _load_data_dir()
 
 @dataclass(frozen=True, slots=True)
 class MoneyLine:
