@@ -17,7 +17,7 @@ SCORING = {
         "blocks": 2.0,
         "steals": 2.0,
         "turnovers": -0.5
-    }, 
+    },
 
     'fanduel': {
         "points": 1.0,
@@ -30,12 +30,24 @@ SCORING = {
     }
 }
 
+# Common order for prop listings: PRA3BST
 SHORTHAND_ORDER = list(SCORING['draftkings'].keys())
 
-PROPS_CURRENT_DATE_STR = datetime.datetime.now().strftime("%m/%d")
-# PROPS_CURRENT_DATE_STR = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
+# Current date -> YYYY-MM-DD -> common date format for filing and similar basic usage
+CONTEST_DATE_STR = datetime.date.today().isoformat()
 
-@dataclass(frozen=True)
+# Current date -> MM/DD -> site's date format used to determine if up-to-date props
+SITE_CURRENT_DATE_STR = datetime.datetime.now().strftime("%m/%d")
+
+# Toggle commented out for switching to props: yesterday, tomorrow, etc. -> ensure input data aliged
+# SITE_CURRENT_DATE_STR = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%m/%d")
+
+# Data directory where all non-python files are stored
+# Made global for easy configuration to other destinations
+# Default (current) is defined only relative to this project and works right away
+DATA_DIR = os.getcwd().replace('src', 'data')
+
+@dataclass(frozen=True, slots=True)
 class MoneyLine:
     moneyline_str: str|None = None
     moneyline: int = 100
@@ -96,13 +108,12 @@ class Prop:
         total_implied_probability = sum([self.implied_odds_over, self.implied_odds_under])
         object.__setattr__(self, 'true_odds_over', self.implied_odds_over / total_implied_probability)
         object.__setattr__(self, 'true_odds_under', self.implied_odds_under / total_implied_probability)
-        
-        # object.__setattr__(self, 'e_fpts', self.implied_odds_over*self.fpts)
-        # object.__setattr__(self, 'e_fpts', (1.0 - self.implied_odds_under)*self.fpts)
+
+        # With no vig: true_odds_over + true_odds_under = 1.0
         object.__setattr__(self, 'e_fpts', self.true_odds_over*self.fpts)
         
         object.__setattr__(self, 'shorthand', self.stat[0].upper())
-        object.__setattr__(self, 'past', self.date_str != PROPS_CURRENT_DATE_STR)
+        object.__setattr__(self, 'past', self.date_str != SITE_CURRENT_DATE_STR)
 
     
     def to_dict(self):
@@ -111,23 +122,30 @@ class Prop:
             'date': self.date_str,
             'stat': self.stat,
             'value': self.value,
-            'odds_over': self.implied_odds_over,
-            'odds_under': self.implied_odds_under,
+            'implied_odds_over': self.implied_odds_over,
+            'implied_odds_under': self.implied_odds_under,
+            'vig': self.vig,
+            'true_odds_over': self.true_odds_over,
+            'true_odds_under': self.true_odds_under,
             'fpts': self.fpts,
             'e_fpts': self.e_fpts
         }
 
+    @property
+    def df(self) -> pd.DataFrame:
+        """Used for filing of individual props before converting to FPTS"""
+        return pd.DataFrame(data={column: [value] for column, value in self.to_dict().items()})
 
 
+# Impute props that are not listed for players
+# Up to discretion, based on type of players not to have these props listed
+# Imputed props appear in "()" in shorthand: Ex: PRA3T(BS)
 IMPUTE_PROPS = {
     'steals': 0.5, # S/B props vary, but most starters will have offered
     'blocks': 0.5, # Want to include for all since valuable FPTS but dont want to overshoot, hence 0.5
     # '3 pointers': 0.5, # Most shooters will have props offered
     'turnovers': 1.5, # NBA average
 }
-
-
-# PLAYER_PROP_TRACKER = PlayerPropTracker()
 
 @dataclass(slots=True, frozen=True)
 class Player:
@@ -159,7 +177,34 @@ class Player:
             shorthand = f'({"".join(sorted(shorthand_vals, key=lambda sh: 'PRASB3T'.index(sh)))})' if missing_props else ''
             
         return fpts, e_fpts, shorthand
-            
+
+    @staticmethod
+    def _save_props(props: list[Prop,...]) -> None:
+        """
+        - Saves current INDIVIDUAL props in standardized format.
+        - Easy to transfer from .parquet to .csv, .parquet was 
+          used because of better performance when building the
+          minimal viable feature.
+        - Robust, complete and easy-to-use feature in development
+          currently since so many requests made for this tool
+          completely separate from fantasy.
+        - Current version usage (commented out) + additonal info at EOF.
+        """
+        master_props_file = os.path.join(DATA_DIR, 'playerprops', f'{CONTEST_DATE_STR}.parquet')
+
+        if not os.path.exists(master_props_file):
+            pd.concat(p.df for p in props).to_parquet(master_props_file)
+            return
+        
+        (pd
+         .concat([
+             pd.read_parquet(master_props_file),
+             pd.concat(p.df for p in props)
+         ])
+        ).to_parquet(master_props_file)
+
+        return
+        
     def __post_init__(self):
         
         if not self.props:
@@ -178,3 +223,7 @@ class Player:
             object.__setattr__(self, 'fpts', sum(prop.fpts for prop in self.props) + imputed_fpts)
             object.__setattr__(self, 'e_fpts', sum(prop.e_fpts for prop in self.props) + imputed_efpts)
             object.__setattr__(self, 'shorthand', ''.join(sorted([prop.shorthand for prop in self.props], key=lambda sh: 'PRASB3T'.index(sh))) + imputed_shorthand + past_props_marker)
+
+            # In progress, loads individual props but need to work on better data transfer
+            # Need to build multi-tiered tracker as well to track various line movements
+            # self._save_props(self.props)
