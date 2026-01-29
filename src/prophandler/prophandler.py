@@ -29,6 +29,7 @@ class PropHandler:
     drop: list[str,...] = field(default_factory=list)
     edits: dict[str,float] = field(default_factory=dict)
     override_edits: dict[str,float]|list[str,...] = field(default_factory=dict)
+    normalize_chalk: bool = False
     ownership: dict[str,float] = field(default_factory=dict)
     scraper: PropScraper|None = None
     scraper_kwargs: dict[str,bool] = field(default_factory=dict)
@@ -157,6 +158,7 @@ class PropHandler:
                 df.loc[name, 'fpts'] = edit
                 df.loc[name, 'e_fpts'] = 0.5*edit
                 df.loc[name, 'props'] = '---'
+
                 
         for name, override_edit in self.override_edits.items():
             if self.verbose:
@@ -166,6 +168,11 @@ class PropHandler:
 
         for col in ("fpts", "e_fpts"):
             df[f"{col}/$"] = 1_000 * (df[col] / df.salary)
+
+        if self.normalize_chalk:
+            df.loc[(df.props == '---') & (df['fpts/$'] >= 4.7), 'fpts'] = ((df.salary / 1000) * 5.0).round(2)
+            df.loc[(df.props == '---') & (df['fpts/$'] >= 4.7), 'e_fpts'] = (df.loc[(df.props == '---') & (df['fpts/$'] >= 4.7)].fpts / 2).round(2)
+            for col in ("fpts", "e_fpts"): df[f"{col}/$"] = 1_000 * (df[col] / df.salary)
 
         df = df.loc[df.fpts > 0.0].dropna().assign(salary=lambda df_: df_.salary.astype('int'))
 
