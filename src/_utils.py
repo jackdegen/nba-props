@@ -35,20 +35,24 @@ def _clean_team(team: str) -> str:
 
 def _load_injuries(
     fanduel_contest_data_path: str = f'/home/deegs/devel/repos/nba-boxscores-git/nba-boxscores/data/2025-2026/contest-files/fanduel/main-slate/{datetime.date.today().isoformat()}.csv',
-    report: bool = False # Verbose flag
+    report: bool = False, # Verbose flag
+    drop: list[str,...]|None = None
 ) -> list[str,...]:
     """
     Load injured players from FanDuel contest file
     Returns both Out players and Doubtful players
     """
     abbreviations = {'GTD': 'Game-time Decision', 'P': 'Probable', 'Q': 'Questionable', 'D': 'Doubtful', 'O': 'Out'}
+
+    if not drop:
+        drop = []
     
     df = (pd
           .read_csv(fanduel_contest_data_path)
           [['Nickname', 'Played', 'Salary', 'Team', 'FPPG', 'Injury Indicator']]
           .set_axis(['name', 'n_games', 'salary', 'team', 'fpts', 'status'], axis=1)
           .assign(
-              name=lambda df_: df_.name.map(_clean_name),
+              name=lambda df_: df_.name.apply(_clean_name),
               fpts_1k=lambda df_: 1_000 * (df_.fpts / df_.salary),
               status=lambda df_: df_.status.map(lambda status_: status_.strip() if isinstance(status_, str) else status_)
           )
